@@ -17,7 +17,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         # Create an image
-        self.image = pygame.image.load("D:\Python\Platformer\img\\viking.png")
+        self.image = pygame.image.load("F:\Python\Platformer\img\\viking.png")
         self.image = pygame.transform.scale(self.image, (50, 50))
 
         # Set a referance to the image rect.
@@ -104,6 +104,49 @@ class Player(pygame.sprite.Sprite):
         """ Called when the user lets off the keyboard. """
         self.change_x = 0
 
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        # Call the parent's constructor
+        super().__init__()
+
+        # Create an image
+        self.image = pygame.image.load("F:\Python\Platformer\img\\samurai.png")
+        self.image = pygame.transform.scale(self.image, (50, 50))
+
+        # Set a referance to the image rect.
+        self.rect = self.image.get_rect()
+
+        # Set speed vector of player
+        self.change_x = 0
+        self.change_y = 0
+
+        # List of sprites we can bump against
+        self.level = None
+
+    def update(self):
+        self.calc_grav()
+        self.rect.x += self.change_x
+        self.rect.y += self.change_y
+        self.rect.x += 2
+        #Currently Not working Trying to Emulate Jump function from Player class to move enemy on platforms
+        """platform_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        self.rect.x -= 2
+        # If it is ok to jump, set our speed upwards
+        if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
+            self.change_y = -5"""
+
+    def calc_grav(self):
+        """ Calculate effect of gravity. """
+        if self.change_y == 0:
+            self.change_y = 1
+        else:
+            self.change_y += .35
+
+        # See if we are on the ground.
+        if self.rect.y >= SCREEN_HEIGHT - self.rect.height and self.change_y >= 0:
+            self.change_y = 0
+            self.rect.y = SCREEN_HEIGHT - self.rect.height
+
 
 class Platform(pygame.sprite.Sprite):
     """ Platform the user can jump on """
@@ -127,13 +170,19 @@ class Level(object):
 
     def __init__(self, player):
         """ Constructor. Pass in a handle to player. Needed for when moving platforms
-            collide with the player. """
+        collide with the player. """
         self.platform_list = pygame.sprite.Group()
         self.enemy_list = pygame.sprite.Group()
         self.player = player
 
+        #Creates and moves the enemy
+        self.enemy = Enemy()
+        self.enemy.rect.x = 400
+        self.enemy.rect.y = 400
+        self.enemy_list.add(self.enemy)
         # Background image
         self.background = None
+        self.world_shift = 0
 
     # Update everythign on this level
     def update(self):
@@ -151,6 +200,13 @@ class Level(object):
         self.platform_list.draw(screen)
         self.enemy_list.draw(screen)
 
+    def shift_world(self, shift_x):
+        self.world_shift += shift_x
+        for platform in self.platform_list:
+            platform.rect.x += shift_x
+
+        for enemy in self.enemy_list:
+            enemy.rect.x += shift_x
 
 # Create platforms for the level
 class Level_01(Level):
@@ -162,10 +218,13 @@ class Level_01(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
+        self.level_limit = -1000
+
         # Array with width, height, x, and y of platform
         level = [[210, 70, 500, 500],
-                 [210, 70, 400, 200],
-                 [210, 70, 100, 300],
+                 [210, 70, 800, 400],
+                 [210, 70, 1000, 500],
+                 [210, 70, 1120, 280]
                  ]
 
         # Go through the array above and add platforms
@@ -176,6 +235,27 @@ class Level_01(Level):
             block.player = self.player
             self.platform_list.add(block)
 
+class Level_02(Level):
+    def __init__(self, player):
+        # Call the parent constructor
+        Level.__init__(self, player)
+
+        self.level_limit = -1000
+
+        # Array with type of platform, and x, y location of the platform.
+        level = [[210, 30, 450, 570],
+                 [210, 30, 850, 420],
+                 [210, 30, 1000, 520],
+                 [210, 30, 1120, 280],
+                 ]
+
+        # Go through the array above and add platforms
+        for platform in level:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.platform_list.add(block)
 
 def main():
     """ Main Program """
@@ -185,14 +265,15 @@ def main():
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
 
-    pygame.display.set_caption("Platformer Jumper")
+    pygame.display.set_caption("Platformer")
 
     # Create the player
     player = Player()
 
     # Create all the levels
     level_list = []
-    level_list.append( Level_01(player) )
+    level_list.append(Level_01(player))
+    level_list.append(Level_02(player))
 
     # Set the current level
     current_level_no = 0
@@ -201,8 +282,8 @@ def main():
     active_sprite_list = pygame.sprite.Group()
     player.level = current_level
 
-    player.rect.x = 340
-    player.rect.y = SCREEN_HEIGHT - player.rect.height
+    player.rect.x = 200
+    player.rect.y = 200
     active_sprite_list.add(player)
 
     # Loop until the user clicks the close button.
@@ -238,12 +319,24 @@ def main():
         current_level.update()
 
         # If the player gets near the right side, shift the world left (-x)
-        if player.rect.right > SCREEN_WIDTH:
-            player.rect.right = SCREEN_WIDTH
+        if player.rect.right >= 500:
+            diff = player.rect.right -500
+            player.rect.right = 500
+            current_level.shift_world(-diff)
 
         # If the player gets near the left side, shift the world right (+x)
-        if player.rect.left < 0:
-            player.rect.left = 0
+        if player.rect.left <= 120:
+            diff = 120 - player.rect.left
+            player.rect.left = 120
+            current_level.shift_world(diff)
+
+        current_position = player.rect.x + current_level.world_shift
+        if current_position < current_level.level_limit:
+            player.rect.x = 120
+            if current_level_no < len(level_list)-1:
+                current_level_no += 1
+                current_level = level_list[current_level_no]
+                player.level = current_level
 
         # ALL CODE TO DRAW SHOULD GO BELOW THIS COMMENT
         current_level.draw(screen)
