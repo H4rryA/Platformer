@@ -30,6 +30,9 @@ class Player(pygame.sprite.Sprite):
         # List of sprites we can bump against
         self.level = None
 
+        #Initializes Score
+        self.score = 0
+
     def update(self):
         """ Move the player. """
         # Gravity
@@ -48,6 +51,11 @@ class Player(pygame.sprite.Sprite):
             elif self.change_x < 0:
                 # Otherwise if we are moving left, do the opposite.
                 self.rect.left = block.rect.right
+
+        coin_hit_list = pygame.sprite.spritecollide(self, self.level.coin_list, True)
+        for coin in coin_hit_list:
+            self.score += 1
+            print(self.score)
 
         # Move up/down
         self.rect.y += self.change_y
@@ -128,12 +136,11 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x += self.change_x
         self.rect.y += self.change_y
         self.rect.x += 2
-        #Currently Not working Trying to Emulate Jump function from Player class to move enemy on platforms
-        """platform_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
-        self.rect.x -= 2
+        """platform_hit_list = pygame.sprite.spritecollide(self,level.platform_list, False)
+        self.rect.y -= 2
         # If it is ok to jump, set our speed upwards
         if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
-            self.change_y = -5"""
+            self.change_y = -10"""
 
     def calc_grav(self):
         """ Calculate effect of gravity. """
@@ -146,6 +153,14 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.y >= SCREEN_HEIGHT - self.rect.height and self.change_y >= 0:
             self.change_y = 0
             self.rect.y = SCREEN_HEIGHT - self.rect.height
+
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+
+        self.image = pygame.Surface([width, height])
+        self.image.fill(BLACK)
+        self.rect = self.image.get_rect()
 
 
 class Platform(pygame.sprite.Sprite):
@@ -173,13 +188,14 @@ class Level(object):
         collide with the player. """
         self.platform_list = pygame.sprite.Group()
         self.enemy_list = pygame.sprite.Group()
+        self.coin_list = pygame.sprite.Group()
         self.player = player
 
-        #Creates and moves the enemy
         self.enemy = Enemy()
         self.enemy.rect.x = 400
         self.enemy.rect.y = 400
         self.enemy_list.add(self.enemy)
+
         # Background image
         self.background = None
         self.world_shift = 0
@@ -189,6 +205,7 @@ class Level(object):
         """ Update everything in this level."""
         self.platform_list.update()
         self.enemy_list.update()
+        self.coin_list.update()
 
     def draw(self, screen):
         """ Draw everything on this level. """
@@ -199,6 +216,7 @@ class Level(object):
         # Draw all the sprite lists that we have
         self.platform_list.draw(screen)
         self.enemy_list.draw(screen)
+        self.coin_list.draw(screen)
 
     def shift_world(self, shift_x):
         self.world_shift += shift_x
@@ -207,6 +225,9 @@ class Level(object):
 
         for enemy in self.enemy_list:
             enemy.rect.x += shift_x
+
+        for coin in self.coin_list:
+            coin.rect.x += shift_x
 
 # Create platforms for the level
 class Level_01(Level):
@@ -227,6 +248,12 @@ class Level_01(Level):
                  [210, 70, 1120, 280]
                  ]
 
+        reward = [[500, 475],
+                [800, 350],
+                [1000, 460],
+                [1120, 250]
+                ]
+
         # Go through the array above and add platforms
         for platform in level:
             block = Platform(platform[0], platform[1])
@@ -234,6 +261,12 @@ class Level_01(Level):
             block.rect.y = platform[3]
             block.player = self.player
             self.platform_list.add(block)
+
+        for coin in reward:
+            circle = Coin(15, 15)
+            circle.rect.x = coin[0]
+            circle.rect.y = coin[1]
+            self.coin_list.add(circle)
 
 class Level_02(Level):
     def __init__(self, player):
@@ -249,6 +282,12 @@ class Level_02(Level):
                  [210, 30, 1120, 280],
                  ]
 
+        reward = [[450, 550],
+                  [850, 350],
+                  [1000, 490],
+                  [1150, 250]
+                  ]
+
         # Go through the array above and add platforms
         for platform in level:
             block = Platform(platform[0], platform[1])
@@ -256,6 +295,12 @@ class Level_02(Level):
             block.rect.y = platform[3]
             block.player = self.player
             self.platform_list.add(block)
+
+        for coin in reward:
+            circle = Coin(15, 15)
+            circle.rect.x = coin[0]
+            circle.rect.y = coin[1]
+            self.coin_list.add(circle)
 
 def main():
     """ Main Program """
