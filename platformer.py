@@ -9,15 +9,13 @@ BLUE = (0, 0, 255)
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-
 class Player(pygame.sprite.Sprite):
 
     def __init__(self):
         # Call the parent's constructor
         super().__init__()
 
-        # Create an image
-        self.image = pygame.image.load("F:\Python\Platformer\img\\viking.png")
+        self.image = pygame.image.load("F:\Python\Platformer\img\\viking1.png").convert()
         self.image = pygame.transform.scale(self.image, (50, 50))
 
         # Set a referance to the image rect.
@@ -33,6 +31,8 @@ class Player(pygame.sprite.Sprite):
         #Initializes Score
         self.score = 0
 
+        self.damage = 5
+
     def update(self):
         """ Move the player. """
         # Gravity
@@ -40,6 +40,12 @@ class Player(pygame.sprite.Sprite):
 
         # Move left/right
         self.rect.x += self.change_x
+
+        #Coin hit registry
+        coin_hit_list = pygame.sprite.spritecollide(self, self.level.coin_list, True)
+        for coin in coin_hit_list:
+            self.score += 1
+            print(self.score)
 
         # See if we hit anything
         block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
@@ -52,18 +58,12 @@ class Player(pygame.sprite.Sprite):
                 # Otherwise if we are moving left, do the opposite.
                 self.rect.left = block.rect.right
 
-        coin_hit_list = pygame.sprite.spritecollide(self, self.level.coin_list, True)
-        for coin in coin_hit_list:
-            self.score += 1
-            print(self.score)
-
         # Move up/down
         self.rect.y += self.change_y
 
         # Check and see if we hit anything
         block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
         for block in block_hit_list:
-
             # Reset our position based on the top/bottom of the object.
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
@@ -99,6 +99,19 @@ class Player(pygame.sprite.Sprite):
         if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
             self.change_y = -10
 
+    def attack(self, dir):
+        hit = False
+        if(dir == 2):
+            self.rect.x += 2
+            enemy_hit_list = pygame.sprite.spritecollide(self, self.level.enemy_list, False)
+            self.rect.x -= 2
+            hit = True
+        if(hit == True):
+            for enemy in enemy_hit_list:
+                enemy.hp -= self.damage
+                self.score += self.damage
+                print(enemy.hp)
+
     # Player-controlled movement:
     def go_left(self):
         """ Called when the user hits the left arrow. """
@@ -128,6 +141,8 @@ class Enemy(pygame.sprite.Sprite):
         self.change_x = 0
         self.change_y = 0
 
+        self.hp = 10;
+
         # List of sprites we can bump against
         self.level = None
 
@@ -136,6 +151,8 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x += self.change_x
         self.rect.y += self.change_y
         self.rect.x += 2
+        if(self.hp <= 0):
+            self.kill()
         """platform_hit_list = pygame.sprite.spritecollide(self,level.platform_list, False)
         self.rect.y -= 2
         # If it is ok to jump, set our speed upwards
@@ -344,17 +361,20 @@ def main():
                 done = True
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_a:
                     player.go_left()
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_d:
                     player.go_right()
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_w:
                     player.jump()
-
+                if event.key == pygame.K_RIGHT:
+                    player.attack(2)
+                if event.key == pygame.K_ESCAPE:
+                    done = True
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT and player.change_x < 0:
+                if event.key == pygame.K_a and player.change_x < 0:
                     player.stop()
-                if event.key == pygame.K_RIGHT and player.change_x > 0:
+                if event.key == pygame.K_d and player.change_x > 0:
                     player.stop()
 
         # Update the player.
