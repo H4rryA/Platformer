@@ -1,10 +1,6 @@
 import pygame
 
-BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -16,15 +12,15 @@ class Player(pygame.sprite.Sprite):
         super(Player, self).__init__()
         self.images = []
         for i in range(7):
-            img = pygame.image.load("F:\Python\Platformer\img\\viking"+str(i)+".png")
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\viking"+str(i)+".png")
             img = pygame.transform.scale(img, (40, 52))
             self.images.append(img)
         for i in range(7, 10):
-            img = pygame.image.load("F:\Python\Platformer\img\\viking"+str(i)+".png")
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\viking"+str(i)+".png")
             img = pygame.transform.scale(img, (54, 48))
             self.images.append(img)
         for i in range(10, 12):
-            img = pygame.image.load("F:\Python\Platformer\img\\viking"+str(i)+".png")
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\viking"+str(i)+".png")
             img = pygame.transform.scale(img, (62, 48))
             self.images.append(img)
 
@@ -123,7 +119,6 @@ class Player(pygame.sprite.Sprite):
         for enemy in enemy_hit_list:
             enemy.hp -= self.damage
             self.score += self.damage
-            print(enemy.hp)
 
     # Player-controlled movement:
     def go_left(self):
@@ -145,7 +140,7 @@ class Enemy(pygame.sprite.Sprite):
 
         self.images = []
         for i in range(4):
-            img = pygame.image.load("F:\Python\Platformer\img\\samurai"+str(i)+".png")
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\samurai"+str(i)+".png")
             img = pygame.transform.scale(img, (58,48))
             self.images.append(img)
         self.image = self.images[0]
@@ -161,17 +156,16 @@ class Enemy(pygame.sprite.Sprite):
         self.shift = 0
 
     def update(self):
-        move = 2
         self.rect.x += self.change_x
         if(self.hp <= 0):
             self.kill()
 
 class Coin(pygame.sprite.Sprite):
-    def __init__(self, width, height):
+    def __init__(self):
         super(Coin, self).__init__()
         self.images = []
         for i in range(1,10):
-            img = pygame.image.load("F:\Python\Platformer\img\coin"+str(i)+".png")
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\coin"+str(i)+".png")
             img = pygame.transform.scale(img, (32, 32))
             self.images.append(img)
         self.image = self.images[0]
@@ -189,11 +183,10 @@ class Platform(pygame.sprite.Sprite):
         super(Platform, self).__init__()
 
         #self.image = pygame.Surface([width, height])
-        image = pygame.image.load("F:\Python\Platformer\img\wall.png")
+        image = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\wall.png")
         rect = (0, 0, width, height)
         self.image = pygame.transform.chop(image, rect)
         self.image = pygame.transform.scale(self.image, (width, height))
-        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
 
 class Level(object):
@@ -211,7 +204,7 @@ class Level(object):
 
         self.enemy = None
         # Background image
-        self.background =pygame.image.load("F:\Python\Platformer\img\space.png").convert()
+        self.background = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\space.png").convert()
         self.background = pygame.transform.scale(self.background, (800, 600))
         self.world_shift = 0
 
@@ -224,9 +217,6 @@ class Level(object):
 
     def draw(self, screen):
         """ Draw everything on this level. """
-
-        # Draw the background
-        #screen.fill(BLACK)
 
         # Draw all the sprite lists that we have
         self.platform_list.draw(screen)
@@ -253,10 +243,11 @@ class Level_01(Level):
         self.level_limit = -1000
 
         # Array with width, height, x, and y of platform
-        level = [[210, 70, 500, 500],
-                 [210, 70, 800, 400],
-                 [210, 70, 1000, 500],
-                 [210, 70, 1120, 280]
+        level = [[210, 70, 200, 300],
+                [210, 70, 500, 500],
+                [210, 70, 800, 400],
+                [210, 70, 1000, 500],
+                [210, 70, 1120, 280]
                  ]
 
         reward = [[500, 475],
@@ -278,42 +269,13 @@ class Level_01(Level):
         self.enemy.rect.y = 453
         self.enemy_list.add(self.enemy)
 
-        for coin in reward:
-            circle = Coin(15, 15)
-            circle.rect.x = coin[0]
-            circle.rect.y = coin[1]
-            self.coin_list.add(circle)
-
-class Level_02(Level):
-    def __init__(self, player):
-        # Call the parent constructor
-        Level.__init__(self, player)
-
-        self.level_limit = -1000
-
-        # Array with type of platform, and x, y location of the platform.
-        level = [[210, 70, 450, 570],
-                 [210, 70, 850, 420],
-                 [210, 70, 1000, 520],
-                 [210, 70, 1120, 280],
-                 ]
-
-        reward = [[450, 530],
-                  [850, 350],
-                  [1000, 480],
-                  [1150, 240]
-                  ]
-
-        # Go through the array above and add platforms
-        for platform in level:
-            block = Platform(platform[0], platform[1])
-            block.rect.x = platform[2]
-            block.rect.y = platform[3]
-            block.player = self.player
-            self.platform_list.add(block)
+        self.enemy = Enemy(self.platform_list)
+        self.enemy.rect.x = 1100
+        self.enemy.rect.y = 453
+        self.enemy_list.add(self.enemy)
 
         for coin in reward:
-            circle = Coin(15, 15)
+            circle = Coin()
             circle.rect.x = coin[0]
             circle.rect.y = coin[1]
             self.coin_list.add(circle)
@@ -335,7 +297,6 @@ def main():
     # Create all the levels
     level_list = []
     level_list.append(Level_01(player))
-    level_list.append(Level_02(player))
 
     # Set the current level
     current_level_no = 0
@@ -344,6 +305,7 @@ def main():
     active_sprite_list = pygame.sprite.Group()
     player.level = current_level
 
+    #Player spawn location
     player.rect.x = 200
     player.rect.y = 200
     active_sprite_list.add(player)
@@ -477,10 +439,7 @@ def main():
         current_position = player.rect.x + current_level.world_shift
         if current_position < current_level.level_limit:
             player.rect.x = 100
-            if current_level_no < len(level_list)-1:
-                current_level_no += 1
-                current_level = level_list[current_level_no]
-                player.level = current_level
+            done = True
 
         # ALL CODE TO DRAW SHOULD GO BELOW THIS COMMENT
         screen.blit(current_level.background,(0, 0))
@@ -498,5 +457,6 @@ def main():
     # on exit.
     pygame.quit()
 
+print("Game Over!")
 if __name__ == "__main__":
     main()
