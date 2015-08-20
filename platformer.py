@@ -57,7 +57,6 @@ class Player(pygame.sprite.Sprite):
         coin_hit_list = pygame.sprite.spritecollide(self, self.level.coin_list, True)
         for coin in coin_hit_list:
             self.score += 1
-            print(self.score)
 
         # See if we hit anything
         block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
@@ -159,9 +158,6 @@ class Enemy(pygame.sprite.Sprite):
 
         self.hp = 10
 
-        # List of sprites we can bump against
-        self.platform_list = pl
-
         self.shift = 0
 
     def update(self):
@@ -169,18 +165,6 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x += self.change_x
         if(self.hp <= 0):
             self.kill()
-    
-    def calc_grav(self):
-        """ Calculate effect of gravity. """
-        if self.change_y == 0:
-            self.change_y = 1
-        else:
-            self.change_y += .35
-
-        # See if we are on the ground.
-        if self.rect.y >= SCREEN_HEIGHT - self.rect.height and self.change_y >= 0:
-            self.change_y = 0
-            self.rect.y = SCREEN_HEIGHT - self.rect.height
 
 class Coin(pygame.sprite.Sprite):
     def __init__(self, width, height):
@@ -204,11 +188,13 @@ class Platform(pygame.sprite.Sprite):
             code. """
         super(Platform, self).__init__()
 
-        self.image = pygame.Surface([width, height])
-        self.image.fill(GREEN)
-        self.width = width
+        #self.image = pygame.Surface([width, height])
+        image = pygame.image.load("F:\Python\Platformer\img\wall.png")
+        rect = (0, 0, width, height)
+        self.image = pygame.transform.chop(image, rect)
+        self.image = pygame.transform.scale(self.image, (width, height))
+        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
-
 
 class Level(object):
     """ This is a generic super-class used to define a level.
@@ -225,7 +211,8 @@ class Level(object):
 
         self.enemy = None
         # Background image
-        self.background = None
+        self.background =pygame.image.load("F:\Python\Platformer\img\space.png").convert()
+        self.background = pygame.transform.scale(self.background, (800, 600))
         self.world_shift = 0
 
     # Update everythign on this level
@@ -239,7 +226,7 @@ class Level(object):
         """ Draw everything on this level. """
 
         # Draw the background
-        screen.fill(BLUE)
+        #screen.fill(BLACK)
 
         # Draw all the sprite lists that we have
         self.platform_list.draw(screen)
@@ -305,10 +292,10 @@ class Level_02(Level):
         self.level_limit = -1000
 
         # Array with type of platform, and x, y location of the platform.
-        level = [[210, 30, 450, 570],
-                 [210, 30, 850, 420],
-                 [210, 30, 1000, 520],
-                 [210, 30, 1120, 280],
+        level = [[210, 70, 450, 570],
+                 [210, 70, 850, 420],
+                 [210, 70, 1000, 520],
+                 [210, 70, 1120, 280],
                  ]
 
         reward = [[450, 530],
@@ -334,6 +321,7 @@ class Level_02(Level):
 def main():
     """ Main Program """
     pygame.init()
+    font = pygame.font.SysFont("arial", 15, "bold")
 
     # Set the height and width of the screen
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
@@ -360,8 +348,8 @@ def main():
     player.rect.y = 200
     active_sprite_list.add(player)
 
-    # Loop until the user clicks the close button.
     done = False
+    # Loop until the user clicks the close button.
     cycletime = 0
     stop = True
     attackRight = False
@@ -401,6 +389,8 @@ def main():
                 if event.key == pygame.K_d and player.change_x > 0:
                     player.stop()
                     stop = True
+
+        score = font.render("Score: " + str(player.score), 1, WHITE)
 
         # Update the player.
         #Changes the image
@@ -473,9 +463,9 @@ def main():
         current_level.update()
 
         # If the player gets near the right side, shift the world left (-x)
-        if player.rect.right >= 500:
-            diff = player.rect.right -500
-            player.rect.right = 500
+        if player.rect.right >= 600:
+            diff = player.rect.right -600
+            player.rect.right = 600
             current_level.shift_world(-diff)
 
         # If the player gets near the left side, shift the world right (+x)
@@ -493,9 +483,10 @@ def main():
                 player.level = current_level
 
         # ALL CODE TO DRAW SHOULD GO BELOW THIS COMMENT
+        screen.blit(current_level.background,(0, 0))
         current_level.draw(screen)
         active_sprite_list.draw(screen)
-
+        screen.blit(score, (10, 10))
         # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
         # Limit to 60 frames per second
