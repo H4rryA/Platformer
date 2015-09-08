@@ -32,6 +32,10 @@ class Player(pygame.sprite.Sprite):
         self.change_x = 0
         self.change_y = 0
 
+        self.hp = 10
+
+        self.hit = False
+
         self.count = 0
         # List of sprites we can bump against
         self.level = None
@@ -107,7 +111,6 @@ class Player(pygame.sprite.Sprite):
             self.change_y = -10
 
     def attack(self, dir):
-        hit = False
         if(dir == 1):
             self.rect.x -= 30
             enemy_hit_list = pygame.sprite.spritecollide(self, self.level.enemy_list, False)
@@ -117,8 +120,7 @@ class Player(pygame.sprite.Sprite):
             enemy_hit_list = pygame.sprite.spritecollide(self, self.level.enemy_list, False)
             self.rect.x -= 30
         for enemy in enemy_hit_list:
-            enemy.hp -= self.damage
-            self.score += self.damage
+            self.hit = True
 
     # Player-controlled movement:
     def go_left(self):
@@ -134,7 +136,7 @@ class Player(pygame.sprite.Sprite):
         self.change_x = 0
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pl):
+    def __init__(self):
         # Call the parent's constructor
         super(Enemy, self).__init__()
 
@@ -142,6 +144,10 @@ class Enemy(pygame.sprite.Sprite):
         for i in range(4):
             img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\samurai"+str(i)+".png")
             img = pygame.transform.scale(img, (58,48))
+            self.images.append(img)
+        for i in range(4, 7):
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\samurai"+str(i)+".png")
+            img = pygame.transform.scale(img, (72,46))
             self.images.append(img)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
@@ -151,7 +157,7 @@ class Enemy(pygame.sprite.Sprite):
         self.change_x = 0
         self.change_y = 0
 
-        self.hp = 10
+        self.hp = 5
 
         self.shift = 0
 
@@ -172,6 +178,17 @@ class Coin(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.count = 0
 
+class Flag(pygame.sprite.Sprite):
+    def __init__(self):
+        super(Flag, self).__init__()
+        self.images = []
+        for i in range(9):
+            img = pygame.image.load("C:\\Users\\Harry\\Documents\\GitHub\\Platformer\\img\\flag"+str(i)+".png")
+            img = pygame.transform.scale(img, (40, 52))
+            self.images.append(img)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.count = 0
 
 class Platform(pygame.sprite.Sprite):
     """ Platform the user can jump on """
@@ -201,6 +218,8 @@ class Level(object):
         self.enemy_list = pygame.sprite.Group()
         self.coin_list = pygame.sprite.Group()
         self.player = player
+
+        self.flag = None
 
         self.enemy = None
         # Background image
@@ -240,20 +259,40 @@ class Level_01(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
-        self.level_limit = -1000
+        self.level_limit = -2390
 
         # Array with width, height, x, and y of platform
         level = [[210, 70, 200, 300],
                 [210, 70, 500, 500],
                 [210, 70, 800, 400],
                 [210, 70, 1000, 500],
-                [210, 70, 1120, 280]
+                [210, 70, 1120, 280],
+                [210, 70, 1400, 400],
+                [210, 70, 1700, 300],
+                [210, 70, 2000, 500],
+                [210, 70, 2175, 350],
+                [210, 70, 2300, 200],
+                [210, 70, 2600, 400],
+                [210, 70, 3000, 300],
+                [210, 70, 3300, 175]
                  ]
+
+        enemies = [[550, 453],
+                    [1140, 233],
+                    [2040, 453],
+                    [2640, 353],
+                    [3030, 253]
+                    ]
 
         reward = [[500, 475],
                 [800, 350],
                 [1000, 460],
-                [1120, 250]
+                [1120, 250],
+                [1700, 200],
+                [1900, 400],
+                [2100, 300],
+                [2800, 200],
+                [3000, 100]
                 ]
 
         # Go through the array above and add platforms
@@ -264,21 +303,22 @@ class Level_01(Level):
             block.player = self.player
             self.platform_list.add(block)
 
-        self.enemy = Enemy(self.platform_list)
-        self.enemy.rect.x = 600
-        self.enemy.rect.y = 453
-        self.enemy_list.add(self.enemy)
-
-        self.enemy = Enemy(self.platform_list)
-        self.enemy.rect.x = 1100
-        self.enemy.rect.y = 453
-        self.enemy_list.add(self.enemy)
-
         for coin in reward:
             circle = Coin()
             circle.rect.x = coin[0]
             circle.rect.y = coin[1]
             self.coin_list.add(circle)
+
+        for enemy in enemies:
+            en = Enemy()
+            en.rect.x = enemy[0]
+            en.rect.y = enemy[1]
+            self.enemy_list.add(en)
+
+        self.flag = Flag()
+        self.flag.rect.x = 3510
+        self.flag.rect.y = 125
+        self.coin_list.add(self.flag)
 
 def main():
     """ Main Program """
@@ -319,6 +359,7 @@ def main():
     flip = False
     move = 2
     ch = 60
+    win = False
 
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
@@ -352,7 +393,8 @@ def main():
                     player.stop()
                     stop = True
 
-        score = font.render("Score: " + str(player.score), 1, WHITE)
+        score = font.render("Score: " + str(player.score) , 1, WHITE)
+        hp = font.render("HP: " + str(player.hp), 1, WHITE)
 
         # Update the player.
         #Changes the image
@@ -360,6 +402,14 @@ def main():
         ms = clock.get_time()
         cycletime += ms/5
         if cycletime > 15:
+
+            if(player.hit == True):
+                enemy.hp -= player.damage
+                player.score += player.damage
+                player.hit = False
+
+            if player.rect.y >= SCREEN_HEIGHT - player.rect.height:
+                done = True
             if player.change_y <0:
                 player.count = 6
             elif player.change_y>0:
@@ -407,12 +457,25 @@ def main():
                     enemy.rect.x+= -move
                     move = move * -1
                     ch = ch * -1
+
                 enemy.count+=1
-                if(enemy.count == 3):
+                if(enemy.count == 7):
                     enemy.count = 0
                 enemy.image = enemy.images[enemy.count]
                 if(move < 0):
                     enemy.image = pygame.transform.flip(enemy.images[enemy.count], True, False)
+                    if(enemy.count ==4):
+                        enemy.rect.x -= 14
+                    elif(enemy.count == 0):
+                        enemy.rect.x += 14
+                if(enemy.count >= 4):
+                    enemy_attack_list = pygame.sprite.spritecollide(player, current_level.enemy_list, False)
+                    if len(enemy_attack_list) > 0 and player.hit == False:
+                        player.hp -= 2
+                        player.rect.x -= 50
+                    if player.hp <= 0:
+                        done = True
+
 
             if(player.change_x < 0 or flip==True):
                 player.image = pygame.transform.flip(player.image, True, False)
@@ -438,25 +501,32 @@ def main():
 
         current_position = player.rect.x + current_level.world_shift
         if current_position < current_level.level_limit:
-            player.rect.x = 100
             done = True
+            win = True
 
         # ALL CODE TO DRAW SHOULD GO BELOW THIS COMMENT
         screen.blit(current_level.background,(0, 0))
         current_level.draw(screen)
         active_sprite_list.draw(screen)
         screen.blit(score, (10, 10))
+        screen.blit(hp, (90, 10))
         # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
-
-        # Limit to 60 frames per second
 
         # Go ahead and update the screen with what we've drawn.
         pygame.display.flip()
 
+
+    screen.fill((0, 0, 0))
+    if(win == True):
+        gameover = font.render("You Win! Score: " + str(player.score), 1, WHITE)
+    else:
+        gameover = font.render("Game Over! Score: " + str(player.score), 1, WHITE)
+    screen.blit(gameover, (350, 300))
+    pygame.display.flip()
+    pygame.time.wait(2000)
     # Be IDLE friendly. If you forget this line, the program will 'hang'
     # on exit.
     pygame.quit()
 
-print("Game Over!")
 if __name__ == "__main__":
     main()
